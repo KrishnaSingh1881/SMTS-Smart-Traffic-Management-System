@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────
+   Clay Design System Tokens — Light Theme
+   ───────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --clay-bg: #f0f4f8;
+  --clay-surface: #ffffff;
+  --clay-border: rgba(255, 255, 255, 0.6);
+
+  /* Typography */
+  --clay-text: #1a202c;
+  --clay-muted: #718096;
+
+  /* Accent & Status */
+  --clay-accent: #6c63ff;
+  --clay-success: #48bb78;
+  --clay-warning: #ed8936;
+  --clay-danger: #fc8181;
+
+  /* Congestion colours */
+  --congestion-free: #48bb78;
+  --congestion-moderate: #ed8936;
+  --congestion-heavy: #fc8181;
+  --congestion-gridlock: #e53e3e;
+
+  /* Clay morphism */
+  --clay-border-radius: 16px;
+  --clay-border-radius-lg: 24px;
+  --clay-blur: 12px;
+  --clay-shadow:
+    8px 8px 16px rgba(163, 177, 198, 0.6),
+    -4px -4px 12px rgba(255, 255, 255, 0.8);
+  --clay-shadow-inset:
+    inset 4px 4px 8px rgba(163, 177, 198, 0.4),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.7);
+}
+
+/* ─────────────────────────────────────────────
+   Dark Theme Overrides
+   ───────────────────────────────────────────── */
+[data-theme="dark"] {
+  --clay-bg: #1a1f2e;
+  --clay-surface: #242938;
+  --clay-border: rgba(255, 255, 255, 0.08);
+
+  --clay-text: #e2e8f0;
+  --clay-muted: #a0aec0;
+
+  --clay-accent: #7c73ff;
+  --clay-success: #68d391;
+  --clay-warning: #f6ad55;
+  --clay-danger: #feb2b2;
+
+  --clay-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.4),
+    -4px -4px 12px rgba(255, 255, 255, 0.04);
+  --clay-shadow-inset:
+    inset 4px 4px 8px rgba(0, 0, 0, 0.3),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.04);
+}
+
+/* ─────────────────────────────────────────────
+   Base Styles
+   ───────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: var(--clay-bg);
+  color: var(--clay-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
