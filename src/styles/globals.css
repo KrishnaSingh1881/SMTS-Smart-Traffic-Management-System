@@ -3,68 +3,106 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────
-   Clay Design System Tokens — Light Theme
+   Clay Design System — Light Theme
    ───────────────────────────────────────────── */
 :root {
   /* Backgrounds */
-  --clay-bg: #f0f4f8;
-  --clay-surface: #ffffff;
-  --clay-border: rgba(255, 255, 255, 0.6);
+  --clay-bg: #e8edf5;
+  --clay-surface: #f0f4fa;
+  --clay-surface-raised: #f7f9fd;
+  --clay-border: rgba(255, 255, 255, 0.75);
+  --clay-border-subtle: rgba(163, 177, 198, 0.3);
 
   /* Typography */
   --clay-text: #1a202c;
-  --clay-muted: #718096;
+  --clay-text-muted: #64748b;
 
   /* Accent & Status */
   --clay-accent: #6c63ff;
-  --clay-success: #48bb78;
-  --clay-warning: #ed8936;
-  --clay-danger: #fc8181;
+  --clay-accent-soft: rgba(108, 99, 255, 0.12);
+  --clay-success: #22c55e;
+  --clay-warning: #f59e0b;
+  --clay-danger: #ef4444;
 
   /* Congestion colours */
-  --congestion-free: #48bb78;
-  --congestion-moderate: #ed8936;
-  --congestion-heavy: #fc8181;
-  --congestion-gridlock: #e53e3e;
+  --congestion-free: #22c55e;
+  --congestion-moderate: #f59e0b;
+  --congestion-heavy: #ef4444;
+  --congestion-gridlock: #dc2626;
 
   /* Clay morphism */
-  --clay-border-radius: 16px;
-  --clay-border-radius-lg: 24px;
-  --clay-blur: 12px;
+  --clay-border-radius: 18px;
+  --clay-border-radius-lg: 28px;
+  --clay-border-radius-sm: 12px;
+  --clay-blur: 16px;
+
+  /* Layered neumorphic shadows */
   --clay-shadow:
-    8px 8px 16px rgba(163, 177, 198, 0.6),
-    -4px -4px 12px rgba(255, 255, 255, 0.8);
+    6px 6px 14px rgba(163, 177, 198, 0.7),
+    -4px -4px 10px rgba(255, 255, 255, 0.9),
+    0 1px 3px rgba(163, 177, 198, 0.2);
+  --clay-shadow-lg:
+    10px 10px 24px rgba(163, 177, 198, 0.65),
+    -6px -6px 16px rgba(255, 255, 255, 0.95),
+    0 2px 6px rgba(163, 177, 198, 0.15);
+  --clay-shadow-sm:
+    3px 3px 8px rgba(163, 177, 198, 0.55),
+    -2px -2px 6px rgba(255, 255, 255, 0.85);
   --clay-shadow-inset:
-    inset 4px 4px 8px rgba(163, 177, 198, 0.4),
-    inset -2px -2px 6px rgba(255, 255, 255, 0.7);
+    inset 3px 3px 8px rgba(163, 177, 198, 0.45),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.8);
+  --clay-shadow-hover:
+    8px 8px 20px rgba(163, 177, 198, 0.75),
+    -5px -5px 14px rgba(255, 255, 255, 0.95),
+    0 4px 8px rgba(108, 99, 255, 0.08);
 }
 
 /* ─────────────────────────────────────────────
-   Dark Theme Overrides
+   Dark Theme
    ───────────────────────────────────────────── */
 [data-theme="dark"] {
-  --clay-bg: #1a1f2e;
-  --clay-surface: #242938;
-  --clay-border: rgba(255, 255, 255, 0.08);
+  --clay-bg: #151922;
+  --clay-surface: #1e2433;
+  --clay-surface-raised: #252d3d;
+  --clay-border: rgba(255, 255, 255, 0.07);
+  --clay-border-subtle: rgba(255, 255, 255, 0.04);
 
   --clay-text: #e2e8f0;
-  --clay-muted: #a0aec0;
+  --clay-text-muted: #94a3b8;
 
   --clay-accent: #7c73ff;
-  --clay-success: #68d391;
-  --clay-warning: #f6ad55;
-  --clay-danger: #feb2b2;
+  --clay-accent-soft: rgba(124, 115, 255, 0.15);
+  --clay-success: #4ade80;
+  --clay-warning: #fbbf24;
+  --clay-danger: #f87171;
+
+  --congestion-free: #4ade80;
+  --congestion-moderate: #fbbf24;
+  --congestion-heavy: #f87171;
+  --congestion-gridlock: #ef4444;
 
   --clay-shadow:
-    8px 8px 16px rgba(0, 0, 0, 0.4),
-    -4px -4px 12px rgba(255, 255, 255, 0.04);
+    6px 6px 14px rgba(0, 0, 0, 0.5),
+    -3px -3px 10px rgba(255, 255, 255, 0.04),
+    0 1px 3px rgba(0, 0, 0, 0.3);
+  --clay-shadow-lg:
+    10px 10px 24px rgba(0, 0, 0, 0.55),
+    -5px -5px 16px rgba(255, 255, 255, 0.05),
+    0 2px 6px rgba(0, 0, 0, 0.25);
+  --clay-shadow-sm:
+    3px 3px 8px rgba(0, 0, 0, 0.4),
+    -2px -2px 6px rgba(255, 255, 255, 0.03);
   --clay-shadow-inset:
-    inset 4px 4px 8px rgba(0, 0, 0, 0.3),
+    inset 3px 3px 8px rgba(0, 0, 0, 0.4),
     inset -2px -2px 6px rgba(255, 255, 255, 0.04);
+  --clay-shadow-hover:
+    8px 8px 20px rgba(0, 0, 0, 0.6),
+    -4px -4px 14px rgba(255, 255, 255, 0.05),
+    0 4px 8px rgba(124, 115, 255, 0.12);
 }
 
 /* ─────────────────────────────────────────────
-   Base Styles
+   Base
    ───────────────────────────────────────────── */
 * {
   box-sizing: border-box;
@@ -72,16 +110,48 @@
   margin: 0;
 }
 
-html,
-body {
+html, body {
   max-width: 100vw;
   overflow-x: hidden;
   background-color: var(--clay-bg);
   color: var(--clay-text);
+  scroll-behavior: smooth;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+a { color: inherit; text-decoration: none; }
+
+/* ─────────────────────────────────────────────
+   Clay utility classes
+   ───────────────────────────────────────────── */
+.clay-card {
+  background: var(--clay-surface);
+  border-radius: var(--clay-border-radius);
+  box-shadow: var(--clay-shadow);
+  border: 1px solid var(--clay-border);
+  backdrop-filter: blur(var(--clay-blur));
+  transition: box-shadow 0.25s ease, transform 0.2s ease;
+}
+
+.clay-card:hover {
+  box-shadow: var(--clay-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.clay-card-lg {
+  border-radius: var(--clay-border-radius-lg);
+  box-shadow: var(--clay-shadow-lg);
+}
+
+.clay-inset {
+  box-shadow: var(--clay-shadow-inset);
+  border-radius: var(--clay-border-radius-sm);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--clay-border-subtle);
+  border-radius: 99px;
 }

@@ -201,7 +201,7 @@ function dijkstra(
   previous.set(start, null);
 
   // Add all nodes from graph
-  for (const [node] of graph) {
+  for (const node of Array.from(graph.keys())) {
     if (node !== start) {
       distances.set(node, Infinity);
       previous.set(node, null);
@@ -210,7 +210,7 @@ function dijkstra(
   }
 
   // Also add all destination nodes (they might not be in graph keys)
-  for (const edges of graph.values()) {
+  for (const edges of Array.from(graph.values())) {
     for (const { toSegmentId } of edges) {
       if (!distances.has(toSegmentId)) {
         distances.set(toSegmentId, Infinity);
@@ -225,7 +225,7 @@ function dijkstra(
     let current: string | null = null;
     let minDistance = Infinity;
 
-    for (const node of unvisited) {
+    for (const node of Array.from(unvisited)) {
       const dist = distances.get(node) ?? Infinity;
       if (dist < minDistance) {
         minDistance = dist;

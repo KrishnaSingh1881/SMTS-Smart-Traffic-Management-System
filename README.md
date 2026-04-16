@@ -92,6 +92,8 @@ NEXTAUTH_URL="http://localhost:3000"
 
 # Ollama AI
 OLLAMA_BASE_URL="http://localhost:11434"
+OLLAMA_MODEL="gemma4:e4b"
+OLLAMA_TIMEOUT_MS="60000"
 ```
 
 ### 4. Set Up the Database
@@ -122,7 +124,7 @@ See `CREDENTIALS.md` for default test accounts.
 
 ```bash
 # Pull the model
-ollama pull llama2
+ollama pull gemma4:e4b
 
 # Ollama runs automatically on port 11434
 ```

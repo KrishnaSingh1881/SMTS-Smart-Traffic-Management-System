@@ -28,7 +28,10 @@ const config: Config = {
       },
       boxShadow: {
         clay: "var(--clay-shadow)",
+        "clay-lg": "var(--clay-shadow-lg)",
+        "clay-sm": "var(--clay-shadow-sm)",
         "clay-inset": "var(--clay-shadow-inset)",
+        "clay-hover": "var(--clay-shadow-hover)",
       },
       backdropBlur: {
         clay: "var(--clay-blur)",

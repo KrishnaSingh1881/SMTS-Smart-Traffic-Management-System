@@ -5,7 +5,6 @@ import type { SegmentState } from "@/store/useTrafficStore";
 import ClayCard from "@/components/ui/ClayCard";
 import CongestionBadge from "@/components/monitoring/CongestionBadge";
 import SensorOfflineAlert from "@/components/monitoring/SensorOfflineAlert";
-import { staggerChildren, fadeInUp } from "@/lib/utils/motion";
 
 interface SegmentGridProps {
   segments: SegmentState[];
@@ -18,14 +17,14 @@ function formatTime(iso: string | null): string {
 
 export default function SegmentGrid({ segments }: SegmentGridProps) {
   return (
-    <motion.div
-      variants={staggerChildren}
-      initial="hidden"
-      animate="visible"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-    >
-      {segments.map((seg) => (
-        <motion.div key={seg.id} variants={fadeInUp} layout>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {segments.map((seg, i) => (
+        <div key={seg.id}>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: i * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
+          >
           <ClayCard className="flex flex-col gap-3">
             {/* Header */}
             <div className="flex items-start justify-between gap-2">
@@ -61,8 +60,9 @@ export default function SegmentGrid({ segments }: SegmentGridProps) {
               <SensorOfflineAlert segmentName={seg.name} />
             )}
           </ClayCard>
-        </motion.div>
+          </motion.div>
+        </div>
       ))}
-    </motion.div>
+    </div>
   );
 }

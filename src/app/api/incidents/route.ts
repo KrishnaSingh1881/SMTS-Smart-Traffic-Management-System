@@ -9,6 +9,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/options";
 import { prisma } from "@/lib/db/prisma";
 import { emitSSE } from "@/lib/sse/emitter";
+import { Prisma } from "@prisma/client";
 import type { IncidentType, IncidentStatus } from "@prisma/client";
 
 export async function GET(request: Request) {
@@ -98,6 +99,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    const auditMetadata: Prisma.InputJsonObject = {
+      segmentId: segment_id,
+      type,
+      severity,
+      description: typeof description === "string" ? description : null,
+    };
+
     // Transaction: create incident + set segment congestion to at least Heavy + audit log
     const result = await prisma.$transaction(async (tx) => {
       // Create incident
@@ -141,12 +149,7 @@ export async function POST(request: Request) {
           action: "INCIDENT_CREATE",
           userId: session.user.id,
           incidentId: incident.id,
-          metadata: {
-            segmentId: segment_id,
-            type,
-            severity,
-            description,
-          },
+          metadata: auditMetadata,
         },
       });
 

@@ -10,8 +10,8 @@
 import { emitSSE } from "@/lib/sse/emitter";
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama2";
-const OLLAMA_TIMEOUT_MS = 10000; // 10 seconds
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "gemma4:e4b";
+const OLLAMA_TIMEOUT_MS = Number(process.env.OLLAMA_TIMEOUT_MS ?? "60000");
 
 export interface OllamaGenerateRequest {
   model: string;
@@ -35,6 +35,10 @@ export async function ollamaGenerate(
   prompt: string
 ): Promise<string | null> {
   try {
+    if (!Number.isFinite(OLLAMA_TIMEOUT_MS) || OLLAMA_TIMEOUT_MS <= 0) {
+      throw new Error("OLLAMA_TIMEOUT_MS must be a positive number");
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
 
@@ -54,11 +58,20 @@ export async function ollamaGenerate(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
+      let errorDetails = "";
+      try {
+        errorDetails = await response.text();
+      } catch {
+        errorDetails = "";
+      }
+
       console.error(
-        `[Ollama] HTTP error ${response.status}: ${response.statusText}`
+        `[Ollama] HTTP error ${response.status}: ${response.statusText}${
+          errorDetails ? ` - ${errorDetails}` : ""
+        }`
       );
       emitSSE("system:ai-unavailable", {
-        reason: `HTTP ${response.status}`,
+        reason: `HTTP ${response.status}${errorDetails ? `: ${errorDetails}` : ""}`,
         timestamp: new Date().toISOString(),
       });
       return null;
@@ -79,7 +92,9 @@ export async function ollamaGenerate(
   } catch (error) {
     if (error instanceof Error) {
       if (error.name === "AbortError") {
-        console.error("[Ollama] Request timeout");
+        console.error(
+          `[Ollama] Request timeout after ${OLLAMA_TIMEOUT_MS}ms`
+        );
       } else {
         console.error("[Ollama] Network error:", error.message);
       }

@@ -49,6 +49,12 @@ export default function TopBar() {
   // Show AI degraded warning if active and not dismissed
   const showAiWarning = aiDegraded && !aiAlertDismissed;
 
+  // Auto-dismiss on mount — don't show stale AI warning from previous session
+  useEffect(() => {
+    setAiDegraded(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <header
       className={cn(

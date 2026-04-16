@@ -16,6 +16,7 @@ import { buildSignalOptimizationPrompt } from "./prompts";
 import { parseSignalTimingResponse } from "./parser";
 import { emitSSE } from "@/lib/sse/emitter";
 import type { SegmentData, PhaseData } from "./prompts";
+import { Prisma } from "@prisma/client";
 
 /**
  * Optimize signal timing for a specific traffic signal using AI.
@@ -110,10 +111,16 @@ export async function optimizeSignal(signalId: string): Promise<boolean> {
     }
 
     // Store previous timing for audit log
-    const previousTiming = currentPhases.map((p) => ({
+    const previousTiming: Prisma.InputJsonArray = currentPhases.map((p) => ({
       phaseState: p.phaseState,
       sequenceOrder: p.sequenceOrder,
       durationSeconds: p.durationSeconds,
+    }));
+    const newTiming: Prisma.InputJsonArray = updates.map((update) => ({
+      phaseState: update.phaseState,
+      durationSeconds: update.durationSeconds,
+      sequenceOrder: update.sequenceOrder,
+      confidence: update.confidence,
     }));
 
     // Apply updates in a transaction
@@ -164,18 +171,20 @@ export async function optimizeSignal(signalId: string): Promise<boolean> {
       });
 
       if (systemUser) {
+        const auditMetadata: Prisma.InputJsonObject = {
+          previousTiming,
+          newTiming,
+          aiConfidenceScore: updates[0]?.confidence ?? 0,
+          optimizedAt: new Date().toISOString(),
+          source: "ai_system",
+        };
+
         await tx.auditLog.create({
           data: {
             action: "SIGNAL_AI_UPDATE",
             userId: systemUser.id,
             signalId,
-            metadata: {
-              previousTiming,
-              newTiming: updates,
-              aiConfidenceScore: updates[0]?.confidence ?? 0,
-              optimizedAt: new Date().toISOString(),
-              source: "ai_system",
-            },
+            metadata: auditMetadata,
           },
         });
       }
