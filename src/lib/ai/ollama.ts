@@ -10,7 +10,7 @@
 import { emitSSE } from "@/lib/sse/emitter";
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "gemma4:e4b";
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "gemma:2b";
 const OLLAMA_TIMEOUT_MS = Number(process.env.OLLAMA_TIMEOUT_MS ?? "60000");
 
 export interface OllamaGenerateRequest {
@@ -70,8 +70,14 @@ export async function ollamaGenerate(
           errorDetails ? ` - ${errorDetails}` : ""
         }`
       );
+      
+      const isModelNotFound = errorDetails.toLowerCase().includes("not found");
+      const reason = isModelNotFound 
+        ? `Model '${OLLAMA_MODEL}' not found. Run 'ollama pull ${OLLAMA_MODEL}'`
+        : `HTTP ${response.status}${errorDetails ? `: ${errorDetails}` : ""}`;
+
       emitSSE("system:ai-unavailable", {
-        reason: `HTTP ${response.status}${errorDetails ? `: ${errorDetails}` : ""}`,
+        reason,
         timestamp: new Date().toISOString(),
       });
       return null;
@@ -87,6 +93,11 @@ export async function ollamaGenerate(
       });
       return null;
     }
+
+    emitSSE("system:ai-available", {
+      model: OLLAMA_MODEL,
+      timestamp: new Date().toISOString(),
+    });
 
     return data.response;
   } catch (error) {

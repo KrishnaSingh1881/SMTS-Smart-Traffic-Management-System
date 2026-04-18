@@ -1,17 +1,36 @@
 /**
  * GET /api/monitoring/segments
  * Returns all road segments with current state and latest observation data.
+ * Auto-seeds Meridian City data if the DB is empty.
  * Requirements: 7.2
  */
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
+import { seedMeridianCity } from "@/lib/seed/meridianCity";
+
+let seedAttempted = false;
 
 export async function GET() {
+  // Auto-seed if DB has no segments (first run)
+  if (!seedAttempted) {
+    seedAttempted = true;
+    const count = await prisma.roadSegment.count();
+    if (count === 0) {
+      try {
+        await seedMeridianCity();
+      } catch (err) {
+        console.error("[segments] auto-seed failed:", err);
+      }
+    }
+  }
+
   const segments = await prisma.roadSegment.findMany({
     select: {
       id: true,
       name: true,
+      geometry: true,
+      zoneType: true,
       currentCongestion: true,
       sensorOnline: true,
       lastObservationAt: true,
@@ -31,6 +50,8 @@ export async function GET() {
     return {
       id: seg.id,
       name: seg.name,
+      geometry: seg.geometry,
+      zoneType: seg.zoneType,
       currentCongestion: seg.currentCongestion,
       sensorOnline: seg.sensorOnline,
       lastObservationAt: seg.lastObservationAt?.toISOString() ?? null,

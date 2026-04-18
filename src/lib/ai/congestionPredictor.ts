@@ -283,8 +283,11 @@ export function startPredictionScheduler(): void {
         `[Scheduler] Running predictions for ${segments.length} segments`
       );
 
-      for (const segment of segments) {
-        await predictCongestion(segment.id);
+      // Process in batches to avoid overwhelming the AI server
+      const batchSize = 3;
+      for (let i = 0; i < segments.length; i += batchSize) {
+        const batch = segments.slice(i, i + batchSize);
+        await Promise.all(batch.map(s => predictCongestion(s.id)));
       }
     } catch (error) {
       console.error("[Scheduler] Error in prediction loop:", error);

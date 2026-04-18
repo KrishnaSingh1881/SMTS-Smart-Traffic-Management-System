@@ -197,6 +197,17 @@ export async function optimizeSignal(signalId: string): Promise<boolean> {
       timestamp: new Date().toISOString(),
     });
 
+    // Emit AI token SSE event with optimisation reasoning (Req 14.1)
+    const intersectionName = signal.intersection.name;
+    const prevGreen = currentPhases.find((p) => p.phaseState === "Green");
+    const newGreen = updates.find((u) => u.phaseState === "Green");
+    if (prevGreen && newGreen) {
+      const confidencePct = Math.round((newGreen.confidence ?? 0) * 100);
+      const token = `Optimised ${intersectionName}: N→S green extended from ${prevGreen.durationSeconds}s to ${newGreen.durationSeconds}s (confidence: ${confidencePct}%)`;
+      const insightId = `optimize-all-${Date.now()}`;
+      emitSSE("ai:token", { token, insightId });
+    }
+
     console.log(`[Optimizer] Successfully optimized signal ${signalId}`);
     return true;
   } catch (error) {
@@ -228,8 +239,11 @@ export function startOptimizationScheduler(): void {
         `[Scheduler] Running optimization for ${signals.length} standard signals`
       );
 
-      for (const signal of signals) {
-        await optimizeSignal(signal.id);
+      // Process in small batches to avoid overwhelming the AI server
+      const batchSize = 3;
+      for (let i = 0; i < signals.length; i += batchSize) {
+        const batch = signals.slice(i, i + batchSize);
+        await Promise.all(batch.map(s => optimizeSignal(s.id)));
       }
     } catch (error) {
       console.error("[Scheduler] Error in standard optimization loop:", error);
@@ -253,9 +267,8 @@ export function startOptimizationScheduler(): void {
         `[Scheduler] Running optimization for ${signals.length} high-priority signals`
       );
 
-      for (const signal of signals) {
-        await optimizeSignal(signal.id);
-      }
+      // High priority signals processed together
+      await Promise.all(signals.map(s => optimizeSignal(s.id)));
     } catch (error) {
       console.error(
         "[Scheduler] Error in high-priority optimization loop:",

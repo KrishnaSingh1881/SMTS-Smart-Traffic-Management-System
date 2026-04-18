@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { fadeInUp, staggerChildren } from "@/lib/utils/motion";
@@ -41,7 +41,10 @@ export default function LoginPage() {
           setError("Invalid email or password. Please try again.");
         }
       } else {
-        router.push("/monitoring");
+        // Req 19.1: redirect Traffic_Controller users to /map
+        const session = await getSession();
+        const role = (session?.user as { role?: string } | undefined)?.role;
+        router.push(role === "Traffic_Controller" ? "/map" : "/monitoring");
         router.refresh();
       }
     } finally {

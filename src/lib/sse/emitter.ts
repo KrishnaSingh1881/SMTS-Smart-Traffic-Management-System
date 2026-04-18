@@ -18,7 +18,18 @@ export type SSEEventType =
   | "incident:update"
   | "incident:escalated"
   | "prediction:alert"
-  | "system:ai-unavailable";
+  | "system:ai-available"
+  | "system:ai-unavailable"
+  // Simulation engine events (Requirements: 6.9)
+  | "simulation:tick"
+  | "simulation:state_change"
+  | "simulation:scenario_update"
+  | "simulation:emergency_update"
+  | "simulation:signal_preemption"
+  // AI insight events
+  | "ai:token"
+  | "ai:insight_complete"
+  | "ai:insight_error";
 
 export interface SSEEvent {
   type: SSEEventType;

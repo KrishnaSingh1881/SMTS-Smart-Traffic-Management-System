@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils/cn";
 
 const navItems = [
   {
-    label: "Map",
+    label: "Traffic Monitor",
     href: "/map",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -17,6 +17,17 @@ const navItems = [
       </svg>
     ),
     roles: ["Traffic_Controller", "Driver"],
+  },
+  {
+    label: "City Simulator",
+    href: "/simulation",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="6" width="20" height="12" rx="2" />
+        <path d="M6 12h4m-2-2v4m7-4h.01m2.99 2h.01" />
+      </svg>
+    ),
+    roles: ["Traffic_Controller"],
   },
   {
     label: "Monitoring",
@@ -103,7 +114,7 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        "flex flex-col w-64 min-h-screen",
+        "flex flex-col w-64 min-h-screen relative z-[100]",
         "bg-[var(--clay-surface)] border-r border-[var(--clay-border)]",
         "shadow-clay"
       )}

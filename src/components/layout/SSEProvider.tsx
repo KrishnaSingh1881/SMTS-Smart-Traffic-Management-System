@@ -28,6 +28,9 @@ export default function SSEProvider({
     upsertPredictions,
     setAiDegraded,
     setSseConnected,
+    setWeather,
+    updateOptimizationScore,
+    addXP,
   } = useTrafficStore();
 
   const esRef = useRef<EventSource | null>(null);
@@ -98,8 +101,27 @@ export default function SSEProvider({
         break;
       }
 
+      case "system:ai-available":
+        setAiDegraded(false);
+        break;
+
       case "system:ai-unavailable":
         setAiDegraded(true);
+        break;
+
+      case "simulation:weather_change":
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setWeather((msg.data as any).weather);
+        break;
+
+      case "simulation:score_update":
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        updateOptimizationScore((msg.data as any).score - useTrafficStore.getState().simulation.optimizationScore);
+        break;
+
+      case "simulation:xp_gain":
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        addXP((msg.data as any).amount);
         break;
 
       default:

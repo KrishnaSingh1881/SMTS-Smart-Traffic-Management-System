@@ -55,6 +55,13 @@ export interface PredictionState {
   predictedAt: string;
 }
 
+export interface SimulationState {
+  optimizationScore: number;
+  experiencePoints: number;
+  activeWeather: 'Clear' | 'Rainy' | 'Foggy';
+  lastEventTimestamp: string | null;
+}
+
 // ─────────────────────────────────────────────
 // Store shape
 // ─────────────────────────────────────────────
@@ -65,6 +72,9 @@ interface TrafficStore {
   signals: Record<string, SignalState>;
   incidents: Record<string, IncidentState>;
   predictions: Record<string, PredictionState[]>; // keyed by segmentId
+
+  // Simulation state (for Simulator mode)
+  simulation: SimulationState;
 
   // System flags
   aiDegraded: boolean;
@@ -87,6 +97,11 @@ interface TrafficStore {
   setPredictions: (predictions: PredictionState[]) => void;
   upsertPredictions: (segmentId: string, predictions: PredictionState[]) => void;
 
+  // Simulation actions
+  updateOptimizationScore: (delta: number) => void;
+  addXP: (amount: number) => void;
+  setWeather: (weather: SimulationState['activeWeather']) => void;
+
   // System actions
   setAiDegraded: (degraded: boolean) => void;
   setSseConnected: (connected: boolean) => void;
@@ -101,6 +116,12 @@ export const useTrafficStore = create<TrafficStore>((set) => ({
   signals: {},
   incidents: {},
   predictions: {},
+  simulation: {
+    optimizationScore: 100,
+    experiencePoints: 0,
+    activeWeather: 'Clear',
+    lastEventTimestamp: null,
+  },
   aiDegraded: false,
   sseConnected: false,
 
@@ -162,6 +183,31 @@ export const useTrafficStore = create<TrafficStore>((set) => ({
   upsertPredictions: (segmentId, predictions) =>
     set((state) => ({
       predictions: { ...state.predictions, [segmentId]: predictions },
+    })),
+
+  // Simulation actions
+  updateOptimizationScore: (delta) =>
+    set((state) => ({
+      simulation: {
+        ...state.simulation,
+        optimizationScore: Math.max(0, Math.min(100, state.simulation.optimizationScore + delta)),
+      },
+    })),
+
+  addXP: (amount) =>
+    set((state) => ({
+      simulation: {
+        ...state.simulation,
+        experiencePoints: state.simulation.experiencePoints + amount,
+      },
+    })),
+
+  setWeather: (weather) =>
+    set((state) => ({
+      simulation: {
+        ...state.simulation,
+        activeWeather: weather,
+      },
     })),
 
   // System actions

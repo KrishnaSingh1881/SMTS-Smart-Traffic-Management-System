@@ -49,6 +49,12 @@ export default function TopBar() {
   // Show AI degraded warning if active and not dismissed
   const showAiWarning = aiDegraded && !aiAlertDismissed;
 
+  useEffect(() => {
+    if (aiDegraded) {
+      setAiAlertDismissed(false);
+    }
+  }, [aiDegraded]);
+
   // Auto-dismiss on mount — don't show stale AI warning from previous session
   useEffect(() => {
     setAiDegraded(false);

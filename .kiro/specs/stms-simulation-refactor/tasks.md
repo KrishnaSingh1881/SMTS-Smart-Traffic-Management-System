@@ -4,12 +4,6 @@
 
 Transform the existing STMS into a live city traffic simulation platform for Meridian City. The implementation is split into 6 phases with hard dependencies: Phase 1 (Map Infrastructure) must complete before Phase 2 (Simulation Engine) begins. Phase 5 (Emergency Priority) depends on both Phase 1 and Phase 2. All 113 existing tests must continue to pass throughout.
 
-**Key constraints:**
-- No localStorage/sessionStorage — Zustand for client state, PostgreSQL for persistent, in-memory for transient simulation state
-- Dynamic imports with `ssr: false` for all MapLibre/Mapbox components
-- All new API routes follow `src/app/api/[feature]/route.ts` pattern
-- All new components follow `src/components/[feature]/ComponentName.tsx` pattern
-- Simulation engine singleton stored in `globalThis.__simulationEngine`
 
 ---
 
@@ -19,13 +13,13 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
 
 > **Hard dependency:** All Phase 1 tasks must be complete before any Phase 2 task begins.
 
-- [ ] T1.1 Install MapLibre GL JS and mapbox-gl packages
+- [x] T1.1 Install MapLibre GL JS and mapbox-gl packages
   - Add `maplibre-gl` and `mapbox-gl` (and their `@types/*`) to `package.json`
   - Verify both packages resolve without peer-dependency conflicts
   - _Requirements: 1.1, 1.2, 1.6_
   - _Complexity: S_
 
-- [ ] T1.2 Create `IMapProvider` interface
+- [x] T1.2 Create `IMapProvider` interface
   - File: `src/lib/map/IMapProvider.ts`
   - Define interface with methods: `addSource()`, `removeSource()`, `addLayer()`, `removeLayer()`, `setFeatureState()`, `flyTo()`, `on()` (click + contextmenu overloads), `off()`, `getCanvas()`, `resize()`, `remove()`
   - Export `MapInitOptions` type (center, zoom, style)
@@ -33,7 +27,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T1.1_
 
-- [ ] T1.3 Create `MapLibreAdapter`
+- [x] T1.3 Create `MapLibreAdapter`
   - File: `src/lib/map/MapLibreAdapter.ts`
   - Implements `IMapProvider`; wraps `maplibre-gl` Map instance
   - Default style: `https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json`
@@ -42,7 +36,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T1.2_
 
-- [ ] T1.4 Create `MapboxAdapter`
+- [x] T1.4 Create `MapboxAdapter`
   - File: `src/lib/map/MapboxAdapter.ts`
   - Implements `IMapProvider`; wraps `mapbox-gl` Map instance
   - Style: `mapbox://styles/mapbox/dark-v11`
@@ -52,7 +46,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T1.2_
 
-- [ ] T1.5 Create `MapProviderFactory`
+- [x] T1.5 Create `MapProviderFactory`
   - File: `src/lib/map/MapProviderFactory.ts`
   - Export `createMapProvider(container, options)` — checks `process.env.NEXT_PUBLIC_MAPBOX_TOKEN` at call time; returns `MapboxAdapter` if token present, else `MapLibreAdapter`
   - This is the ONLY file that imports either adapter
@@ -60,7 +54,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T1.3, T1.4_
 
-- [ ] T1.6 Create `MapProviderContext`
+- [x] T1.6 Create `MapProviderContext`
   - File: `src/contexts/MapProviderContext.tsx`
   - `createContext<IMapProvider | null>(null)` with `MapProviderContext.Provider`
   - Export `useMapProvider()` hook
@@ -68,7 +62,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T1.2_
 
-- [ ] T1.7 Prisma migration: add `zone_type` and `flood_risk` columns to `road_segments`
+- [x] T1.7 Prisma migration: add `zone_type` and `flood_risk` columns to `road_segments`
   - Create migration file under `prisma/migrations/` (timestamp-prefixed directory)
   - SQL: `ALTER TABLE road_segments ADD COLUMN zone_type TEXT[] NOT NULL DEFAULT '{}', ADD COLUMN flood_risk BOOLEAN NOT NULL DEFAULT false`
   - Update `prisma/schema.prisma`: add `zoneType String[] @default([]) @map("zone_type")` and `floodRisk Boolean @default(false) @map("flood_risk")` to `RoadSegment` model
@@ -76,7 +70,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Requirements: 2.1, 2.2, 2.4, 2.11_
   - _Complexity: S_
 
-- [ ] T1.8 Create Meridian City seed data
+- [x] T1.8 Create Meridian City seed data
   - File: `scripts/seed-meridian-city.mjs` (or extend `prisma/seed.ts`)
   - Seed exactly 18 named road segments with GeoJSON LineString geometry centred at ~18.5°N, 73.8°E
   - Required names: Central Boulevard, North Ring Road, Station Avenue, Market Street, Harbour Link, Industrial Bypass, Airport Expressway, University Road, Old Town Lane, Tech Park Drive, Stadium Road, Riverside Drive, Commerce Way, Port Access Road, Eastern Connector, Southern Loop, Civic Centre Road, Waterfront Promenade
@@ -87,7 +81,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: L_
   - _Dependencies: T1.7_
 
-- [ ] T1.9 Create `MapCanvas` component
+- [x] T1.9 Create `MapCanvas` component
   - File: `src/components/map/MapCanvas.tsx`
   - Use `next/dynamic` with `{ ssr: false }` to load the map
   - On mount: call `createMapProvider(containerRef.current, options)`, store instance in ref, wrap children in `MapProviderContext.Provider`
@@ -97,7 +91,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T1.5, T1.6_
 
-- [ ] T1.10 Create `SegmentLayer` component
+- [x] T1.10 Create `SegmentLayer` component
   - File: `src/components/map/SegmentLayer.tsx`
   - Consumes `useMapProvider()`; adds a GeoJSON source + LineString layer for all road segments
   - Colour mapping: Free=`#22c55e`, Moderate=`#eab308`, Heavy=`#f97316`, Gridlock=`#ef4444`
@@ -109,7 +103,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T1.9_
 
-- [ ] T1.11 Create `SignalLayer` component
+- [x] T1.11 Create `SignalLayer` component
   - File: `src/components/map/SignalLayer.tsx`
   - Renders circle markers at intersection lat/lng; colour by signal phase (Green=`#22c55e`, Yellow=`#eab308`, Red=`#ef4444`, Off=`#64748b`)
   - Active phase: apply pulsing dot animation
@@ -119,7 +113,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T1.9_
 
-- [ ] T1.12 Create `IncidentLayer` component
+- [x] T1.12 Create `IncidentLayer` component
   - File: `src/components/map/IncidentLayer.tsx`
   - Renders pin markers at segment midpoints for active incidents
   - On pin click: show popup with incident type, severity, description, time elapsed
@@ -128,7 +122,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T1.9_
 
-- [ ] T1.13 Create `PredictionLayer` component
+- [x] T1.13 Create `PredictionLayer` component
   - File: `src/components/map/PredictionLayer.tsx`
   - Renders road segments as translucent dashed lines at 50% opacity showing predicted congestion for next 60 minutes
   - Visibility controlled by `visible` prop
@@ -136,7 +130,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T1.9_
 
-- [ ] T1.14 Create `LayerTogglePanel` component
+- [x] T1.14 Create `LayerTogglePanel` component
   - File: `src/components/map/LayerTogglePanel.tsx`
   - Floating panel, positioned top-right (absolute)
   - Three independent toggle controls: Signal Overlay, Incident Overlay, Prediction Overlay
@@ -146,7 +140,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T1.11, T1.12, T1.13_
 
-- [ ] T1.15 Create `SegmentDetailPanel` component
+- [x] T1.15 Create `SegmentDetailPanel` component
   - File: `src/components/map/SegmentDetailPanel.tsx`
   - Slide-in panel triggered by segment click
   - Displays: segment name, current vehicle count, avg speed, congestion level, active incidents, AI prediction
@@ -155,7 +149,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T1.10_
 
-- [ ] T1.16 Create `IntersectionPopup` component
+- [x] T1.16 Create `IntersectionPopup` component
   - File: `src/components/map/IntersectionPopup.tsx`
   - Map popup triggered by intersection click
   - Displays: signal phase, last override timestamp, AI recommended timing
@@ -164,7 +158,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T1.11_
 
-- [ ] T1.17 Create `ContextMenu` component
+- [x] T1.17 Create `ContextMenu` component
   - File: `src/components/map/ContextMenu.tsx`
   - Right-click context menu on road segments
   - Contains "Inject Event" option with event type sub-selector (Accident, Road Closure, Debris, Flooding, Other)
@@ -173,7 +167,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T1.10_
 
-- [ ] T1.18 Wire SSE updates to `SegmentLayer`
+- [x] T1.18 Wire SSE updates to `SegmentLayer`
   - In `SegmentLayer`, subscribe to the existing `/api/monitoring/sse` SSE stream
   - On `segment:update` event: call `provider.setFeatureState()` to update colour/width within 5 seconds
   - Use `useEffect` cleanup to close `EventSource` on unmount
@@ -181,7 +175,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T1.10_
 
-- [ ] T1.19 Replace `TrafficMap.tsx` SVG implementation with `MapCanvas`
+- [x] T1.19 Replace `TrafficMap.tsx` SVG implementation with `MapCanvas`
   - Modify `src/components/map/TrafficMap.tsx` to render `<MapCanvas>` with all layer components as children
   - Remove SVG node/edge rendering code; preserve the component's public props interface (`segments: SegmentState[]`) for backward compatibility
   - Update `src/app/(dashboard)/map/page.tsx` to pass segments to the new implementation
@@ -189,7 +183,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T1.9, T1.10, T1.11, T1.12, T1.13, T1.14, T1.15, T1.16, T1.17, T1.18_
 
-- [ ] T1.20 Phase 1 verification checkpoint
+- [x] T1.20 Phase 1 verification checkpoint
   - Run `npm test` (vitest --run) — all 113 existing tests must pass
   - Smoke test: map page loads with MapLibre GL JS, Meridian City segments are visible, overlay toggles work, segment click opens detail panel, right-click shows context menu
   - _Requirements: 1.1, 3.1, 4.1, 5.1, 5.3_
@@ -203,14 +197,14 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
 
 > **Hard dependency:** All Phase 1 tasks (T1.1–T1.20) must be complete before starting Phase 2.
 
-- [ ] T2.1 Create simulation types
+- [x] T2.1 Create simulation types
   - File: `src/lib/simulation/types.ts`
   - Export: `ScenarioType`, `TriggerType`, `ActiveScenario`, `EmergencyVehicle`, `SimulationStatus`, `AIInsight`, `SimulationState`
   - Match type definitions exactly as specified in design.md Data Models section
   - _Requirements: 6.7, 6.9, 9.1_
   - _Complexity: S_
 
-- [ ] T2.2 Create zone profile functions
+- [x] T2.2 Create zone profile functions
   - File: `src/lib/simulation/zoneProfiles.ts`
   - Export `ZoneType`, `ZoneOutput`, and `getZoneProfile(hour: number, zone: ZoneType): ZoneOutput`
   - Implement pure functions for all 5 zone types with time-of-day patterns per Requirements 7.1–7.5
@@ -220,7 +214,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T2.1_
 
-- [ ] T2.3 Create `SimulationEngine` class and singleton
+- [x] T2.3 Create `SimulationEngine` class and singleton
   - File: `src/lib/simulation/engine.ts`
   - Implement class with state machine (`STOPPED`/`RUNNING`/`PAUSED`), tick loop, speed multipliers
   - Methods: `play(speed?)`, `pause()`, `reset()`, `triggerScenario(type)`, `dispatchEmergency(originId, destinationId)`, `cancelEmergency(vehicleId)`, `getState()`, private `tick()`, `generateObservations()`, `applyCascade()`, `advanceEmergencyVehicles()`
@@ -232,7 +226,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: XL_
   - _Dependencies: T2.1, T2.2_
 
-- [ ] T2.4 Create `POST /api/simulation/control` route
+- [x] T2.4 Create `POST /api/simulation/control` route
   - File: `src/app/api/simulation/control/route.ts`
   - Accepts `{ action: 'play' | 'pause' | 'reset', speed?: 1 | 5 | 10 | 30 }`
   - Returns `{ state, simulatedTime, speed }`
@@ -241,7 +235,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T2.3_
 
-- [ ] T2.5 Create `GET /api/simulation/stream` SSE route
+- [x] T2.5 Create `GET /api/simulation/stream` SSE route
   - File: `src/app/api/simulation/stream/route.ts`
   - SSE stream that forwards `simulation:tick`, `simulation:state_change`, `simulation:scenario_update`, `simulation:emergency_update`, `simulation:signal_preemption` events from `sseEmitter`
   - Pattern mirrors existing `src/app/api/monitoring/sse/route.ts`
@@ -249,13 +243,13 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T2.3, T2.6_
 
-- [ ] T2.6 Extend SSE event types in `src/lib/sse/emitter.ts`
+- [x] T2.6 Extend SSE event types in `src/lib/sse/emitter.ts`
   - Add to `SSEEventType` union: `'simulation:tick'`, `'simulation:state_change'`, `'simulation:scenario_update'`, `'simulation:emergency_update'`, `'simulation:signal_preemption'`, `'ai:token'`, `'ai:insight_complete'`, `'ai:insight_error'`
   - No other changes to `emitter.ts`
   - _Requirements: 6.9_
   - _Complexity: S_
 
-- [ ] T2.7 Create `SimulationControlPanel` component
+- [x] T2.7 Create `SimulationControlPanel` component
   - File: `src/components/simulation/SimulationControlPanel.tsx`
   - Floating panel, bottom-left (absolute positioning)
   - Contains: Play/Pause toggle, speed selector (1x/5x/10x/30x), Reset button, simulated clock display (HH:MM), collapsible toggle
@@ -265,7 +259,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T2.4, T2.5, T2.8_
 
-- [ ] T2.8 Create `useSimulation` Zustand store
+- [x] T2.8 Create `useSimulation` Zustand store
   - File: `src/store/simulationStore.ts`
   - State: `{ state: SimulationState, simulatedTime: string, speed: number, activeScenarios: string[], emergencyVehicleCount: number }`
   - Actions: `setSimulationStatus(status: SimulationStatus)`, `setSpeed(speed)`, `setState(state)`
@@ -274,7 +268,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T2.1_
 
-- [ ] T2.9 Write unit tests for `zoneProfiles.ts`
+- [x] T2.9 Write unit tests for `zoneProfiles.ts`
   - File: `src/test/zoneProfiles.test.ts`
   - Concrete examples for each of the 5 zone types at peak, off-peak, and night hours (15 example cases minimum)
   - Verify `vehicleCount >= 0` and `avgSpeedKmh >= 0` for all cases
@@ -283,7 +277,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T2.2_
 
-- [ ]* T2.10 Write property-based tests for simulation engine
+- [x] T2.10 Write property-based tests for simulation engine
   - File: `src/test/simulation.test.ts`
   - Use `fast-check` (already in devDependencies)
   - **Property 1: Zone profile output is within congestion thresholds**
@@ -306,7 +300,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T2.2, T2.3_
 
-- [ ] T2.11 Phase 2 verification checkpoint
+- [x] T2.11 Phase 2 verification checkpoint
   - Run `npm test` (vitest --run) — all 113+ tests must pass (including new T2.9 tests)
   - Smoke test: play/pause/speed controls call the API and update the panel, map segments update colour on each tick, simulated clock advances
   - _Requirements: 6.1–6.10, 7.1–7.7, 8.1–8.7_
@@ -318,7 +312,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
 
 ### Phase 3: Event Engine
 
-- [ ] T3.1 Implement cascade/ripple logic in `SimulationEngine`
+- [x] T3.1 Implement cascade/ripple logic in `SimulationEngine`
   - Add `applyCascade()` method to `src/lib/simulation/engine.ts`
   - On each tick: find all Gridlock segments; increase vehicle counts on directly adjacent segments by 20% (hop 1); if hop-1 segment also reaches Gridlock, increase its adjacent segments by 20% (hop 2 max)
   - Store overrides in `cascadeOverrides: Map<string, number>` (segmentId → vehicle count override)
@@ -329,7 +323,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T2.3_
 
-- [ ] T3.2 Create scenario preset handlers in `SimulationEngine`
+- [x] T3.2 Create scenario preset handlers in `SimulationEngine`
   - Add `triggerScenario(type: ScenarioType)` implementation to `src/lib/simulation/engine.ts`
   - Rush Hour: set all `commercial` and `transit` segments to Heavy/Gridlock for 15 simulated minutes
   - Stadium Exodus: set 5 segments nearest Stadium Road to Gridlock for 20 simulated minutes; 3 adjacent to Heavy
@@ -341,7 +335,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: L_
   - _Dependencies: T3.1_
 
-- [ ] T3.3 Create `POST /api/simulation/scenario` route
+- [x] T3.3 Create `POST /api/simulation/scenario` route
   - File: `src/app/api/simulation/scenario/route.ts`
   - Accepts `{ scenario: ScenarioType }`
   - Calls `simulationEngine.triggerScenario(scenario)`
@@ -350,7 +344,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T3.2_
 
-- [ ] T3.4 Add scenario dropdown to `SimulationControlPanel`
+- [x] T3.4 Add scenario dropdown to `SimulationControlPanel`
   - Modify `src/components/simulation/SimulationControlPanel.tsx`
   - Add dropdown with options: Rush Hour, Stadium Exodus, Major Accident, Flash Flood
   - On selection: call `POST /api/simulation/scenario`
@@ -358,7 +352,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T2.7, T3.3_
 
-- [ ] T3.5 Create `EventFeed` component
+- [x] T3.5 Create `EventFeed` component
   - File: `src/components/events/EventFeed.tsx`
   - Right sidebar list of active incidents
   - Each entry: type icon, segment name, time elapsed since creation, severity badge, Resolve button
@@ -369,7 +363,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T2.5_
 
-- [ ] T3.6 Create `EventFeedItem` component
+- [x] T3.6 Create `EventFeedItem` component
   - File: `src/components/events/EventFeedItem.tsx`
   - Renders a single incident entry with all fields from Requirement 12.2
   - Accepts `incident` prop and `onResolve` callback
@@ -377,7 +371,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T3.5_
 
-- [ ] T3.7 Wire `ContextMenu` "Inject Event" to `POST /api/incidents`
+- [x] T3.7 Wire `ContextMenu` "Inject Event" to `POST /api/incidents`
   - Modify `src/components/map/ContextMenu.tsx`
   - On event type confirmed: call `POST /api/incidents` with `{ segmentId, type, severity: 3, description: "Manually injected event" }`
   - On success: show `ToastNotification`; simulation engine will update congestion on next tick
@@ -386,7 +380,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T1.17, T3.8_
 
-- [ ] T3.8 Create `ToastNotification` component
+- [x] T3.8 Create `ToastNotification` component
   - File: `src/components/ui/ToastNotification.tsx`
   - Portal-based toast rendered outside the component tree
   - Accepts `message`, `type` ('success' | 'error' | 'info'), and optional `action` (label + callback)
@@ -394,7 +388,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Requirements: 10.5, 18.2_
   - _Complexity: S_
 
-- [ ]* T3.9 Write property-based tests for cascade logic
+- [x] T3.9 Write property-based tests for cascade logic
   - File: `src/test/cascade.test.ts`
   - **Property 2: Cascade depth is bounded at 2 hops**
     - `// Feature: stms-simulation-refactor, Property 2: cascade depth is bounded at 2 hops`
@@ -412,7 +406,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T3.1_
 
-- [ ] T3.10 Phase 3 verification checkpoint
+- [x] T3.10 Phase 3 verification checkpoint
   - Run `npm test` (vitest --run) — all tests must pass
   - Smoke test: trigger Rush Hour scenario → commercial/transit segments turn Heavy/Gridlock on map; right-click segment → inject Accident → incident appears in EventFeed; Resolve button clears it
   - _Requirements: 9.1–9.7, 10.1–10.5, 11.1–11.4, 12.1–12.4_
@@ -424,7 +418,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
 
 ### Phase 4: AI Insight Layer
 
-- [ ] T4.1 Create AI insight prompt builder
+- [x] T4.1 Create AI insight prompt builder
   - File: `src/lib/ai/insightPrompt.ts`
   - Export `buildInsightPrompt(params: InsightPromptParams): string`
   - `InsightPromptParams`: `{ simulatedTime: string, topSegments: Array<{name, congestion}>, incidentCount: number, worstPredictedSegment: string, trigger: TriggerType }`
@@ -433,7 +427,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Requirements: 13.3, 13.4_
   - _Complexity: S_
 
-- [ ] T4.2 Create `POST /api/ai/insight` route
+- [x] T4.2 Create `POST /api/ai/insight` route
   - File: `src/app/api/ai/insight/route.ts`
   - Accepts `{ trigger: TriggerType }`
   - Fetches top 3 congested segments and worst prediction from DB
@@ -446,7 +440,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T4.1, T2.6_
 
-- [ ] T4.3 Create `GET /api/ai/insight/stream` SSE route
+- [x] T4.3 Create `GET /api/ai/insight/stream` SSE route
   - File: `src/app/api/ai/insight/stream/route.ts`
   - SSE stream forwarding `ai:token`, `ai:insight_complete`, `ai:insight_error` events from `sseEmitter`
   - Pattern mirrors `src/app/api/simulation/stream/route.ts`
@@ -454,7 +448,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T2.6_
 
-- [ ] T4.4 Create `AIAnalystPanel` component
+- [x] T4.4 Create `AIAnalystPanel` component
   - File: `src/components/ai/AIAnalystPanel.tsx`
   - Collapsible panel titled "AI Analyst"
   - Subscribes to `/api/ai/insight/stream` SSE; renders tokens with typing effect as they arrive
@@ -467,14 +461,14 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T4.2, T4.3_
 
-- [ ] T4.5 Create `AIInsightCard` component
+- [x] T4.5 Create `AIInsightCard` component
   - File: `src/components/ai/AIInsightCard.tsx`
   - Renders a single insight with: text content, trigger type badge (`scheduled`/`scenario`/`gridlock_alert`/`manual`), simulated time
   - _Requirements: 13.12_
   - _Complexity: S_
   - _Dependencies: T4.4_
 
-- [ ] T4.6 Wire AI panel auto-open triggers
+- [x] T4.6 Wire AI panel auto-open triggers
   - Modify `src/components/ai/AIAnalystPanel.tsx`
   - Subscribe to `simulation:scenario_update` SSE event → auto-open panel, call `POST /api/ai/insight` with `{ trigger: 'scenario' }`
   - Subscribe to `segment:update` SSE event → if any segment reaches Gridlock → auto-open panel, call `POST /api/ai/insight` with `{ trigger: 'gridlock_alert' }`
@@ -483,14 +477,14 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T4.4_
 
-- [ ] T4.7 Surface signal optimisation reasoning in AI panel
+- [x] T4.7 Surface signal optimisation reasoning in AI panel
   - Modify `src/lib/ai/signalOptimizer.ts`: after successful optimisation, emit `ai:token` SSE events with message in format "Optimised [Intersection Name]: N→S green extended from Xs to Ys (confidence: Z%)"
   - The `AIAnalystPanel` already subscribes to `ai:token` events and will display these automatically
   - _Requirements: 14.1_
   - _Complexity: S_
   - _Dependencies: T4.4_
 
-- [ ] T4.8 Add "Optimise All Signals" button to `SimulationControlPanel`
+- [x] T4.8 Add "Optimise All Signals" button to `SimulationControlPanel`
   - Modify `src/components/simulation/SimulationControlPanel.tsx`
   - Add button that calls `POST /api/signals` (or a new dedicated endpoint) to trigger optimisation for all online signals
   - Create `POST /api/signals/optimize-all/route.ts` if no existing bulk endpoint exists
@@ -498,7 +492,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T2.7, T4.7_
 
-- [ ]* T4.9 Write unit tests and property-based test for `insightPrompt.ts`
+- [x] T4.9 Write unit tests and property-based test for `insightPrompt.ts`
   - File: `src/test/insightPrompt.test.ts`
   - Unit tests: given known segment data, verify prompt contains simulated time, segment names, incident count, worst predicted segment name
   - **Property 7: AI insight prompt contains required context fields**
@@ -509,7 +503,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T4.1_
 
-- [ ] T4.10 Phase 4 verification checkpoint
+- [x] T4.10 Phase 4 verification checkpoint
   - Run `npm test` (vitest --run) — all tests must pass
   - Smoke test: click "Ask AI" → panel opens and streams response with typing effect; trigger Rush Hour scenario → AI panel auto-opens with scenario-tagged insight; disconnect Ollama → panel shows offline state; all other features continue working
   - _Requirements: 13.1–13.12, 14.1–14.3_
@@ -523,7 +517,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
 
 > **Hard dependency:** Phase 1 (T1.1–T1.20) AND Phase 2 (T2.1–T2.11) must both be complete before starting Phase 5.
 
-- [ ] T5.1 Implement `dispatchEmergency()` in `SimulationEngine`
+- [x] T5.1 Implement `dispatchEmergency()` in `SimulationEngine`
   - Add to `src/lib/simulation/engine.ts`
   - Use Dijkstra routing (existing `src/lib/utils/routing.ts`) to compute fastest path between `originId` and `destinationId` intersections, ignoring congestion weights
   - Create `EmergencyVehicle` object: `{ id: uuid, route: string[], currentIndex: 0, speedKmh: 80, state: 'DISPATCHED', preemptedSignalIds: [] }`
@@ -536,7 +530,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: L_
   - _Dependencies: T2.3_
 
-- [ ] T5.2 Implement `advanceEmergencyVehicles()` in `SimulationEngine`
+- [x] T5.2 Implement `advanceEmergencyVehicles()` in `SimulationEngine`
   - Add to `src/lib/simulation/engine.ts`; called on each tick
   - Advance each active `EmergencyVehicle` by one intersection per tick
   - Preempt signal at next intersection (Green, 60s, audit log entry)
@@ -547,7 +541,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T5.1_
 
-- [ ] T5.3 Implement emergency completion logic in `SimulationEngine`
+- [x] T5.3 Implement emergency completion logic in `SimulationEngine`
   - When `EmergencyVehicle.currentIndex` reaches end of route:
     - Set vehicle state to `COMPLETED`
     - Release all remaining signal overrides (revert to AI-optimised timing)
@@ -558,7 +552,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T5.2_
 
-- [ ] T5.4 Create `POST /api/emergency/dispatch` route
+- [x] T5.4 Create `POST /api/emergency/dispatch` route
   - File: `src/app/api/emergency/dispatch/route.ts`
   - Accepts `{ originId: string, destinationId: string }`
   - Calls `simulationEngine.dispatchEmergency(originId, destinationId)`
@@ -568,7 +562,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T5.1_
 
-- [ ] T5.5 Create `DELETE /api/emergency/[vehicleId]` route
+- [x] T5.5 Create `DELETE /api/emergency/[vehicleId]` route
   - File: `src/app/api/emergency/[vehicleId]/route.ts`
   - Calls `simulationEngine.cancelEmergency(vehicleId)`
   - Releases all signal overrides for that vehicle
@@ -577,7 +571,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T5.1_
 
-- [ ] T5.6 Create `EmergencyDispatchModal` component
+- [x] T5.6 Create `EmergencyDispatchModal` component
   - File: `src/components/emergency/EmergencyDispatchModal.tsx`
   - Modal with two intersection pickers (Origin, Destination) populated from DB intersections
   - On confirm: calls `POST /api/emergency/dispatch`; on success closes modal and shows toast
@@ -586,7 +580,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T5.4_
 
-- [ ] T5.7 Create `EmergencyVehicleMarker` component
+- [x] T5.7 Create `EmergencyVehicleMarker` component
   - File: `src/components/emergency/EmergencyVehicleMarker.tsx`
   - Renders SVG ambulance/vehicle icon marker on the map at current intersection position
   - Subscribes to `simulation:emergency_update` SSE events to update position
@@ -595,7 +589,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T5.2, T1.9_
 
-- [ ] T5.8 Create `RouteOverlay` component
+- [x] T5.8 Create `RouteOverlay` component
   - File: `src/components/map/RouteOverlay.tsx`
   - Renders emergency route as bright blue/white animated dashed polyline
   - Travelling pulse effect: animated moving dash offset
@@ -605,7 +599,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T5.2, T1.9_
 
-- [ ] T5.9 Add Emergency button to `SimulationControlPanel`
+- [x] T5.9 Add Emergency button to `SimulationControlPanel`
   - Modify `src/components/simulation/SimulationControlPanel.tsx`
   - Add "Emergency" button with red/blue styling
   - On click: opens `EmergencyDispatchModal`
@@ -613,7 +607,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T2.7, T5.6_
 
-- [ ] T5.10 Wire AI panel emergency narration
+- [x] T5.10 Wire AI panel emergency narration
   - Modify `src/lib/simulation/engine.ts` `dispatchEmergency()`: after dispatch, call `POST /api/ai/insight` with `{ trigger: 'manual' }` to generate dispatch narration
   - The AI prompt (via `buildInsightPrompt`) should include route intersection names and estimated clearance time
   - Completion narration is already triggered in T5.3
@@ -621,7 +615,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T5.1, T5.3, T4.2_
 
-- [ ]* T5.11 Write unit tests for emergency dispatch
+- [x] T5.11 Write unit tests for emergency dispatch
   - File: `src/test/emergency.test.ts`
   - Test: valid origin/destination returns vehicle with non-empty route
   - Test: origin == destination or no path between them returns error (caller maps to 422)
@@ -632,7 +626,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T5.1, T5.2_
 
-- [ ] T5.12 Phase 5 verification checkpoint
+- [x] T5.12 Phase 5 verification checkpoint
   - Run `npm test` (vitest --run) — all tests must pass
   - Smoke test: click Emergency → select origin/destination → dispatch → animated route appears on map → signals pulse green as vehicle advances → AI panel narrates dispatch → vehicle reaches destination → "Route Cleared" toast → AI narrates completion
   - _Requirements: 15.1–15.5, 16.1–16.5, 17.1–17.6, 18.1–18.4, 22.1–22.3_
@@ -644,7 +638,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
 
 ### Phase 6: UI/UX Refactor
 
-- [ ] T6.1 Refactor `/map` page to full-viewport command centre
+- [x] T6.1 Refactor `/map` page to full-viewport command centre
   - Modify `src/app/(dashboard)/map/page.tsx`
   - Remove all padding, headings, and content below the fold
   - Map fills full viewport height; all panels are absolutely positioned floating overlays
@@ -653,14 +647,14 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T1.19, T2.7, T1.14_
 
-- [ ] T6.2 Create `MapHUD` component
+- [x] T6.2 Create `MapHUD` component
   - File: `src/components/map/MapHUD.tsx`
   - Top-left absolute panel: STMS logo, "Meridian City" label, simulated clock (HH:MM) from `useSimulation` store
   - _Requirements: 19.6_
   - _Complexity: S_
   - _Dependencies: T2.8_
 
-- [ ] T6.3 Create `RightSidebar` component
+- [x] T6.3 Create `RightSidebar` component
   - File: `src/components/layout/RightSidebar.tsx`
   - Collapsible right-edge panel containing `AIAnalystPanel` and `EventFeed` stacked vertically
   - Collapse/expand toggle button on the left edge of the sidebar
@@ -668,13 +662,13 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T4.4, T3.5_
 
-- [ ] T6.4 Update auth redirect for `Traffic_Controller` role
+- [x] T6.4 Update auth redirect for `Traffic_Controller` role
   - Modify `src/lib/auth/options.ts`
   - In the `signIn` callback (or `redirect` callback): if user role is `Traffic_Controller`, redirect to `/map` after login
   - _Requirements: 19.1_
   - _Complexity: S_
 
-- [ ] T6.5 Upgrade monitoring page to sortable table default view
+- [x] T6.5 Upgrade monitoring page to sortable table default view
   - Modify `src/app/(dashboard)/monitoring/page.tsx`
   - Default view: `SegmentTable` component (sortable)
   - Toggle button to switch to existing `SegmentGrid` card view
@@ -683,14 +677,14 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: M_
   - _Dependencies: T6.6, T6.7_
 
-- [ ] T6.6 Create `MonitoringStatsBar` component
+- [x] T6.6 Create `MonitoringStatsBar` component
   - File: `src/components/monitoring/MonitoringStatsBar.tsx`
   - Displays: Total Segments, % Free, % Moderate, % Heavy, % Gridlock, Active Incidents count
   - Reads from `useTrafficStore` (already populated by existing hydration logic)
   - _Requirements: 20.3_
   - _Complexity: S_
 
-- [ ] T6.7 Create `SegmentTable` component
+- [x] T6.7 Create `SegmentTable` component
   - File: `src/components/monitoring/SegmentTable.tsx`
   - Sortable table with columns: Segment Name, Zone, Congestion (coloured badge), Vehicles, Avg Speed, Last Update, Trend (sparkline), Actions
   - On SSE `segment:update` event: briefly flash the updated row (CSS transition)
@@ -698,7 +692,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Requirements: 20.1, 20.4_
   - _Complexity: M_
 
-- [ ] T6.8 Add Grid/Table view toggle to monitoring page
+- [x] T6.8 Add Grid/Table view toggle to monitoring page
   - Modify `src/app/(dashboard)/monitoring/page.tsx`
   - Toggle button (Grid icon / Table icon) switches between `SegmentGrid` and `SegmentTable`
   - Store preference in local React state (not persisted)
@@ -706,7 +700,7 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Complexity: S_
   - _Dependencies: T6.5, T6.7_
 
-- [ ] T6.9 Implement SSE reconnection with exponential backoff
+- [x] T6.9 Implement SSE reconnection with exponential backoff
   - File: `src/lib/sse/useSSE.ts` (new hook)
   - Custom React hook wrapping `EventSource` with reconnection logic: 1s → 2s → 4s (max 3 retries)
   - After 3 failed attempts: show "Connection lost" toast with manual "Reconnect" button
@@ -715,27 +709,27 @@ Transform the existing STMS into a live city traffic simulation platform for Mer
   - _Requirements: 21.4, 21.5_
   - _Complexity: M_
 
-- [ ] T6.10 Add "Simulation Paused" overlay badge to map page
+- [x] T6.10 Add "Simulation Paused" overlay badge to map page
   - Modify `src/app/(dashboard)/map/page.tsx`
   - When `useSimulation` store state is `STOPPED` or `PAUSED`: render a non-blocking overlay badge "Simulation Paused" (top-center, semi-transparent)
   - _Requirements: 21.1_
   - _Complexity: S_
   - _Dependencies: T2.8, T6.1_
 
-- [ ] T6.11 Add environment variable documentation to `.env.example`
+- [x] T6.11 Add environment variable documentation to `.env.example`
   - Add entries: `NEXT_PUBLIC_MAPBOX_TOKEN=`, `SIMULATION_TICK_BASE_MS=30000`, `SIMULATION_START_HOUR=6`
   - Add inline comments explaining each variable's purpose and valid values
   - _Requirements: 1.1, 1.2, 6.3_
   - _Complexity: S_
 
-- [ ] T6.12 Phase 6 verification checkpoint
+- [x] T6.12 Phase 6 verification checkpoint
   - Run `npm test` (vitest --run) — all tests must pass
   - Smoke test: Traffic_Controller login redirects to `/map`; full command centre layout renders correctly; monitoring page shows sortable table with stats bar; grid/table toggle works; disconnect SSE → reconnection attempts → "Connection lost" toast; simulation paused badge appears when engine stopped
   - _Requirements: 19.1–19.7, 20.1–20.4, 21.1–21.5_
   - _Complexity: S_
   - _Dependencies: T6.1–T6.11_
 
-- [ ] T6.99 Full integration smoke test
+- [x] T6.99 Full integration smoke test
   - Verify all 113+ tests pass: `npm test`
   - End-to-end scenario: start simulation → trigger Rush Hour → observe map congestion changes → dispatch ambulance → verify signals pulse green along route → verify vehicle icon moves → verify AI panel narrates dispatch and completion → verify audit log entries exist in DB → resolve all incidents → verify EventFeed clears
   - Confirm degraded mode: stop Ollama → AI panel shows offline state → all other features continue

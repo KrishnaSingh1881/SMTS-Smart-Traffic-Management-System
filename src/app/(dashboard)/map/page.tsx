@@ -2,55 +2,34 @@
 
 import { useEffect } from "react";
 import { useTrafficStore, type SegmentState } from "@/store/useTrafficStore";
+import { useSimulationStore } from "@/store/simulationStore";
 import TrafficMap from "@/components/map/TrafficMap";
+import SimulationControlPanel from "@/components/simulation/SimulationControlPanel";
 
 export default function MapPage() {
-  const setSegments = useTrafficStore((s) => s.setSegments);
   const segments = useTrafficStore((s) => Object.values(s.segments) as SegmentState[]);
+  const simState = useSimulationStore((s) => s.state);
+  const setSimulationStatus = useSimulationStore((s) => s.setSimulationStatus);
 
+  // Auto-start the simulation at 5x speed when the map page first loads
   useEffect(() => {
-    async function hydrate() {
-      const res = await fetch("/api/monitoring/segments");
-      if (res.ok) {
-        const data = await res.json();
-        setSegments(Array.isArray(data) ? data : (data.segments ?? []));
-      }
+    if (simState === "STOPPED") {
+      fetch("/api/simulation/control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "play", speed: 5 }),
+      })
+        .then((r) => r.json())
+        .then((data) => setSimulationStatus(data))
+        .catch(() => {/* non-fatal */});
     }
-    hydrate();
-  }, [setSegments]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // only on mount
 
   return (
-    <div className="flex flex-col gap-6 h-full">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--clay-text)]">Traffic Map</h1>
-          <p className="text-sm text-[var(--clay-text-muted)] mt-0.5">
-            Live road network — updates every 30s via SSE
-          </p>
-        </div>
-        <Legend />
-      </div>
+    <div className="absolute inset-x-0 bottom-0 top-0 overflow-hidden bg-black">
       <TrafficMap segments={segments} />
-    </div>
-  );
-}
-
-function Legend() {
-  const items = [
-    { label: "Free",     color: "#22c55e" },
-    { label: "Moderate", color: "#f59e0b" },
-    { label: "Heavy",    color: "#ef4444" },
-    { label: "Gridlock", color: "#dc2626" },
-    { label: "Offline",  color: "#94a3b8" },
-  ];
-  return (
-    <div className="flex items-center gap-3 px-4 py-2.5 rounded-[var(--clay-border-radius-sm)] shadow-clay-sm bg-[var(--clay-surface)] border border-[var(--clay-border)]">
-      {items.map((i) => (
-        <div key={i.label} className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: i.color }} />
-          <span className="text-xs text-[var(--clay-text-muted)]">{i.label}</span>
-        </div>
-      ))}
+      <SimulationControlPanel />
     </div>
   );
 }

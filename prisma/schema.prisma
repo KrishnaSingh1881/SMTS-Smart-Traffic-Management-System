@@ -1,6 +1,3 @@
-// Smart Traffic Management System — Prisma Schema
-// Database: PostgreSQL (required for ENUMs, stored procedures, triggers, connection pooling)
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,9 +7,188 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─────────────────────────────────────────────
-// ENUM TYPES
-// ─────────────────────────────────────────────
+model User {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String          @unique @db.VarChar(255)
+  passwordHash      String          @map("password_hash")
+  fullName          String          @map("full_name") @db.VarChar(255)
+  role              UserRole
+  isActive          Boolean         @default(true) @map("is_active")
+  failedLoginCount  Int             @default(0) @map("failed_login_count") @db.SmallInt
+  lockedUntil       DateTime?       @map("locked_until") @db.Timestamptz(6)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  auditLogs         AuditLog[]
+  resolvedIncidents Incident[]      @relation("ResolvedBy")
+  signalOverrides   TrafficSignal[] @relation("OverrideUser")
+
+  @@index([email], map: "idx_users_email")
+  @@index([role], map: "idx_users_role")
+  @@map("users")
+}
+
+model RoadSegment {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String                 @db.VarChar(255)
+  geometry              String?
+  lengthMeters          Decimal                @map("length_meters") @db.Decimal(10, 2)
+  speedLimitKmh         Int                    @map("speed_limit_kmh") @db.SmallInt
+  currentCongestion     CongestionLevel        @default(Free) @map("current_congestion")
+  sensorOnline          Boolean                @default(true) @map("sensor_online")
+  lastObservationAt     DateTime?              @map("last_observation_at") @db.Timestamptz(6)
+  createdAt             DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  zoneType              String[]               @default([]) @map("zone_type")
+  floodRisk             Boolean                @default(false) @map("flood_risk")
+  congestionPredictions CongestionPrediction[]
+  incidents             Incident[]
+  intersectionSegments  IntersectionSegment[]
+  routeEdgesFrom        RouteEdge[]            @relation("EdgeFrom")
+  routeEdgesTo          RouteEdge[]            @relation("EdgeTo")
+  trafficObservations   TrafficObservation[]
+
+  @@index([currentCongestion], map: "idx_road_segments_congestion")
+  @@map("road_segments")
+}
+
+model Intersection {
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String                @db.VarChar(255)
+  latitude             Decimal               @db.Decimal(9, 6)
+  longitude            Decimal               @db.Decimal(9, 6)
+  isHighPriority       Boolean               @default(false) @map("is_high_priority")
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  intersectionSegments IntersectionSegment[]
+  trafficSignals       TrafficSignal[]
+
+  @@map("intersections")
+}
+
+model IntersectionSegment {
+  intersectionId String       @map("intersection_id") @db.Uuid
+  segmentId      String       @map("segment_id") @db.Uuid
+  intersection   Intersection @relation(fields: [intersectionId], references: [id], onDelete: Cascade)
+  segment        RoadSegment  @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+
+  @@id([intersectionId, segmentId])
+  @@map("intersection_segments")
+}
+
+model TrafficSignal {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  intersectionId    String           @map("intersection_id") @db.Uuid
+  label             String           @db.VarChar(100)
+  currentPhase      SignalPhaseState @default(Red) @map("current_phase")
+  isOnline          Boolean          @default(true) @map("is_online")
+  overrideActive    Boolean          @default(false) @map("override_active")
+  overrideExpiresAt DateTime?        @map("override_expires_at") @db.Timestamptz(6)
+  overrideByUserId  String?          @map("override_by_user_id") @db.Uuid
+  aiOptimized       Boolean          @default(true) @map("ai_optimized")
+  lastAiUpdateAt    DateTime?        @map("last_ai_update_at") @db.Timestamptz(6)
+  lastUpdatedAt     DateTime         @default(now()) @map("last_updated_at") @db.Timestamptz(6)
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  auditLogs         AuditLog[]
+  signalPhases      SignalPhase[]
+  intersection      Intersection     @relation(fields: [intersectionId], references: [id])
+  overrideByUser    User?            @relation("OverrideUser", fields: [overrideByUserId], references: [id])
+
+  @@index([intersectionId], map: "idx_traffic_signals_intersection")
+  @@map("traffic_signals")
+}
+
+model SignalPhase {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  signalId          String           @map("signal_id") @db.Uuid
+  phaseState        SignalPhaseState @map("phase_state")
+  durationSeconds   Int              @map("duration_seconds") @db.SmallInt
+  sequenceOrder     Int              @map("sequence_order") @db.SmallInt
+  isActive          Boolean          @default(false) @map("is_active")
+  appliedAt         DateTime         @default(now()) @map("applied_at") @db.Timestamptz(6)
+  source            String           @default("default") @db.VarChar(20)
+  aiConfidenceScore Decimal?         @map("ai_confidence_score") @db.Decimal(4, 3)
+  signal            TrafficSignal    @relation(fields: [signalId], references: [id], onDelete: Cascade)
+
+  @@unique([signalId, sequenceOrder, appliedAt])
+  @@index([signalId], map: "idx_signal_phases_signal")
+  @@index([appliedAt(sort: Desc)], map: "idx_signal_phases_applied")
+  @@map("signal_phases")
+}
+
+model TrafficObservation {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  segmentId       String          @map("segment_id") @db.Uuid
+  vehicleCount    Int             @map("vehicle_count")
+  avgSpeedKmh     Decimal         @map("avg_speed_kmh") @db.Decimal(5, 2)
+  congestionLevel CongestionLevel @map("congestion_level")
+  observedAt      DateTime        @default(now()) @map("observed_at") @db.Timestamptz(6)
+  segment         RoadSegment     @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+
+  @@index([segmentId, observedAt(sort: Desc)], map: "idx_observations_segment_time")
+  @@map("traffic_observations")
+}
+
+model Incident {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  segmentId        String         @map("segment_id") @db.Uuid
+  type             IncidentType
+  status           IncidentStatus @default(Active)
+  severity         Int            @db.SmallInt
+  description      String?
+  reportedByUserId String?        @map("reported_by_user_id") @db.Uuid
+  resolvedByUserId String?        @map("resolved_by_user_id") @db.Uuid
+  resolvedAt       DateTime?      @map("resolved_at") @db.Timestamptz(6)
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  resolvedBy       User?          @relation("ResolvedBy", fields: [resolvedByUserId], references: [id])
+  segment          RoadSegment    @relation(fields: [segmentId], references: [id])
+
+  @@index([segmentId], map: "idx_incidents_segment")
+  @@index([status], map: "idx_incidents_status")
+  @@index([createdAt(sort: Desc)], map: "idx_incidents_created")
+  @@map("incidents")
+}
+
+model CongestionPrediction {
+  id                   String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  segmentId            String          @map("segment_id") @db.Uuid
+  predictedLevel       CongestionLevel @map("predicted_level")
+  targetWindowMinutes  Int             @map("target_window_minutes") @db.SmallInt
+  modelConfidenceScore Decimal         @map("model_confidence_score") @db.Decimal(4, 3)
+  predictedAt          DateTime        @default(now()) @map("predicted_at") @db.Timestamptz(6)
+  segment              RoadSegment     @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+
+  @@index([segmentId, predictedAt(sort: Desc)], map: "idx_predictions_segment_time")
+  @@map("congestion_predictions")
+}
+
+model AuditLog {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  action     AuditAction
+  userId     String         @map("user_id") @db.Uuid
+  signalId   String?        @map("signal_id") @db.Uuid
+  incidentId String?        @map("incident_id") @db.Uuid
+  metadata   Json?
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  signal     TrafficSignal? @relation(fields: [signalId], references: [id])
+  user       User           @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "idx_audit_logs_user")
+  @@index([action], map: "idx_audit_logs_action")
+  @@index([createdAt(sort: Desc)], map: "idx_audit_logs_created")
+  @@map("audit_logs")
+}
+
+model RouteEdge {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fromSegmentId  String      @map("from_segment_id") @db.Uuid
+  toSegmentId    String      @map("to_segment_id") @db.Uuid
+  baseTravelTime Int         @map("base_travel_time")
+  fromSegment    RoadSegment @relation("EdgeFrom", fields: [fromSegmentId], references: [id], onDelete: Cascade)
+  toSegment      RoadSegment @relation("EdgeTo", fields: [toSegmentId], references: [id], onDelete: Cascade)
+
+  @@unique([fromSegmentId, toSegmentId])
+  @@index([fromSegmentId], map: "idx_route_edges_from")
+  @@map("route_edges")
+}
 
 enum CongestionLevel {
   Free
@@ -69,261 +245,4 @@ enum AuditAction {
   USER_LOGOUT
 
   @@map("audit_action")
-}
-
-// ─────────────────────────────────────────────
-// USERS
-// ─────────────────────────────────────────────
-
-model User {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email             String    @unique @db.VarChar(255)
-  passwordHash      String    @map("password_hash")
-  fullName          String    @map("full_name") @db.VarChar(255)
-  role              UserRole
-  isActive          Boolean   @default(true) @map("is_active")
-  failedLoginCount  Int       @default(0) @map("failed_login_count") @db.SmallInt
-  lockedUntil       DateTime? @map("locked_until") @db.Timestamptz
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-
-  // Relations
-  signalOverrides   TrafficSignal[] @relation("OverrideUser")
-  auditLogs         AuditLog[]
-  resolvedIncidents Incident[]      @relation("ResolvedBy")
-
-  @@index([email], name: "idx_users_email")
-  @@index([role], name: "idx_users_role")
-  @@map("users")
-}
-
-// ─────────────────────────────────────────────
-// ROAD SEGMENTS
-// ─────────────────────────────────────────────
-
-model RoadSegment {
-  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name               String         @db.VarChar(255)
-  // GeoJSON LineString stored as text; use PostGIS geography in production
-  geometry           String?
-  lengthMeters       Decimal        @map("length_meters") @db.Decimal(10, 2)
-  speedLimitKmh      Int            @map("speed_limit_kmh") @db.SmallInt
-  // Cached current state — updated by trigger / service
-  currentCongestion  CongestionLevel @default(Free) @map("current_congestion")
-  sensorOnline       Boolean        @default(true) @map("sensor_online")
-  lastObservationAt  DateTime?      @map("last_observation_at") @db.Timestamptz
-  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz
-
-  // Relations
-  intersectionSegments IntersectionSegment[]
-  trafficObservations  TrafficObservation[]
-  incidents            Incident[]
-  congestionPredictions CongestionPrediction[]
-  routeEdgesFrom       RouteEdge[]  @relation("EdgeFrom")
-  routeEdgesTo         RouteEdge[]  @relation("EdgeTo")
-
-  @@index([currentCongestion], name: "idx_road_segments_congestion")
-  @@map("road_segments")
-}
-
-// ─────────────────────────────────────────────
-// INTERSECTIONS
-// ─────────────────────────────────────────────
-
-model Intersection {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name           String   @db.VarChar(255)
-  latitude       Decimal  @db.Decimal(9, 6)
-  longitude      Decimal  @db.Decimal(9, 6)
-  isHighPriority Boolean  @default(false) @map("is_high_priority")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
-
-  // Relations
-  intersectionSegments IntersectionSegment[]
-  trafficSignals       TrafficSignal[]
-
-  @@map("intersections")
-}
-
-// Junction table: which segments meet at which intersection
-model IntersectionSegment {
-  intersectionId String @map("intersection_id") @db.Uuid
-  segmentId      String @map("segment_id") @db.Uuid
-
-  intersection Intersection @relation(fields: [intersectionId], references: [id], onDelete: Cascade)
-  segment      RoadSegment  @relation(fields: [segmentId], references: [id], onDelete: Cascade)
-
-  @@id([intersectionId, segmentId])
-  @@map("intersection_segments")
-}
-
-// ─────────────────────────────────────────────
-// TRAFFIC SIGNALS
-// ─────────────────────────────────────────────
-
-model TrafficSignal {
-  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  intersectionId     String           @map("intersection_id") @db.Uuid
-  label              String           @db.VarChar(100)
-  currentPhase       SignalPhaseState @default(Red) @map("current_phase")
-  isOnline           Boolean          @default(true) @map("is_online")
-  // Manual override state
-  overrideActive     Boolean          @default(false) @map("override_active")
-  overrideExpiresAt  DateTime?        @map("override_expires_at") @db.Timestamptz
-  overrideByUserId   String?          @map("override_by_user_id") @db.Uuid
-  // AI optimization state
-  aiOptimized        Boolean          @default(true) @map("ai_optimized")
-  lastAiUpdateAt     DateTime?        @map("last_ai_update_at") @db.Timestamptz
-  lastUpdatedAt      DateTime         @default(now()) @map("last_updated_at") @db.Timestamptz
-  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz
-
-  // Relations
-  intersection   Intersection  @relation(fields: [intersectionId], references: [id], onDelete: Restrict)
-  overrideByUser User?         @relation("OverrideUser", fields: [overrideByUserId], references: [id], onDelete: SetNull)
-  signalPhases   SignalPhase[]
-  auditLogs      AuditLog[]
-
-  @@index([intersectionId], name: "idx_traffic_signals_intersection")
-  @@index([overrideActive], name: "idx_traffic_signals_override")
-  @@map("traffic_signals")
-}
-
-// ─────────────────────────────────────────────
-// SIGNAL PHASES
-// ─────────────────────────────────────────────
-// NOTE: CHECK constraint (duration_seconds >= 10 AND duration_seconds <= 180)
-// is enforced via raw SQL in the migration (see migrations/add_constraints.sql)
-// Prisma does not natively emit CHECK constraints for scalar fields.
-
-model SignalPhase {
-  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  signalId          String           @map("signal_id") @db.Uuid
-  phaseState        SignalPhaseState  @map("phase_state")
-  // Valid range: 10–180 seconds — enforced by DB CHECK constraint in migration SQL
-  durationSeconds   Int              @map("duration_seconds") @db.SmallInt
-  sequenceOrder     Int              @map("sequence_order") @db.SmallInt
-  isActive          Boolean          @default(false) @map("is_active")
-  appliedAt         DateTime         @default(now()) @map("applied_at") @db.Timestamptz
-  // source: 'manual_override' | 'ai_optimized' | 'default'
-  source            String           @default("default") @db.VarChar(20)
-  aiConfidenceScore Decimal?         @map("ai_confidence_score") @db.Decimal(4, 3)
-
-  signal TrafficSignal @relation(fields: [signalId], references: [id], onDelete: Cascade)
-
-  @@unique([signalId, sequenceOrder, appliedAt])
-  @@index([signalId], name: "idx_signal_phases_signal")
-  @@index([signalId, isActive], name: "idx_signal_phases_active")
-  @@index([appliedAt(sort: Desc)], name: "idx_signal_phases_applied")
-  @@map("signal_phases")
-}
-
-// ─────────────────────────────────────────────
-// TRAFFIC OBSERVATIONS
-// ─────────────────────────────────────────────
-// NOTE: NOT NULL constraints on segmentId, observedAt, vehicleCount, avgSpeedKmh
-// are enforced by Prisma's non-optional field declarations below.
-
-model TrafficObservation {
-  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  segmentId     String      @map("segment_id") @db.Uuid
-  vehicleCount  Int         @map("vehicle_count")
-  avgSpeedKmh   Decimal     @map("avg_speed_kmh") @db.Decimal(5, 2)
-  congestionLevel CongestionLevel @map("congestion_level")
-  observedAt    DateTime    @default(now()) @map("observed_at") @db.Timestamptz
-
-  segment RoadSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
-
-  @@index([segmentId, observedAt(sort: Desc)], name: "idx_observations_segment_time")
-  @@map("traffic_observations")
-}
-
-// ─────────────────────────────────────────────
-// INCIDENTS
-// ─────────────────────────────────────────────
-
-model Incident {
-  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  segmentId        String         @map("segment_id") @db.Uuid
-  type             IncidentType
-  status           IncidentStatus @default(Active)
-  severity         Int            @db.SmallInt
-  description      String?
-  reportedByUserId String?        @map("reported_by_user_id") @db.Uuid
-  resolvedByUserId String?        @map("resolved_by_user_id") @db.Uuid
-  resolvedAt       DateTime?      @map("resolved_at") @db.Timestamptz
-  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz
-
-  segment    RoadSegment @relation(fields: [segmentId], references: [id], onDelete: Restrict)
-  resolvedBy User?       @relation("ResolvedBy", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
-
-  @@index([segmentId], name: "idx_incidents_segment")
-  @@index([status], name: "idx_incidents_status")
-  @@index([createdAt(sort: Desc)], name: "idx_incidents_created")
-  @@map("incidents")
-}
-
-// ─────────────────────────────────────────────
-// CONGESTION PREDICTIONS
-// ─────────────────────────────────────────────
-
-model CongestionPrediction {
-  id                   String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  segmentId            String          @map("segment_id") @db.Uuid
-  predictedLevel       CongestionLevel @map("predicted_level")
-  // 60 or 120 minutes
-  targetWindowMinutes  Int             @map("target_window_minutes") @db.SmallInt
-  modelConfidenceScore Decimal         @map("model_confidence_score") @db.Decimal(4, 3)
-  predictedAt          DateTime        @default(now()) @map("predicted_at") @db.Timestamptz
-
-  segment RoadSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
-
-  @@index([segmentId, predictedAt(sort: Desc)], name: "idx_predictions_segment_time")
-  @@map("congestion_predictions")
-}
-
-// ─────────────────────────────────────────────
-// AUDIT LOG
-// ─────────────────────────────────────────────
-// NOTE: Append-only enforcement is implemented via a PostgreSQL trigger
-// (prevent_audit_log_mutation) applied in a custom migration SQL file (task 3.1).
-// Prisma cannot express this constraint natively.
-
-model AuditLog {
-  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  action     AuditAction
-  userId     String      @map("user_id") @db.Uuid
-  signalId   String?     @map("signal_id") @db.Uuid
-  incidentId String?     @map("incident_id") @db.Uuid
-  // JSON blob: previous state, new state, AI scores, etc.
-  metadata   Json?
-  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz
-
-  user   User           @relation(fields: [userId], references: [id], onDelete: Restrict)
-  signal TrafficSignal? @relation(fields: [signalId], references: [id], onDelete: SetNull)
-
-  @@index([userId], name: "idx_audit_logs_user")
-  @@index([action], name: "idx_audit_logs_action")
-  @@index([createdAt(sort: Desc)], name: "idx_audit_logs_created")
-  @@map("audit_logs")
-}
-
-// ─────────────────────────────────────────────
-// ROUTE EDGES
-// ─────────────────────────────────────────────
-// Adjacency graph for Dijkstra routing (task 13.1)
-
-model RouteEdge {
-  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  fromSegmentId   String  @map("from_segment_id") @db.Uuid
-  toSegmentId     String  @map("to_segment_id") @db.Uuid
-  // Base travel time in seconds at free-flow speed
-  baseTravelTime  Int     @map("base_travel_time")
-
-  fromSegment RoadSegment @relation("EdgeFrom", fields: [fromSegmentId], references: [id], onDelete: Cascade)
-  toSegment   RoadSegment @relation("EdgeTo", fields: [toSegmentId], references: [id], onDelete: Cascade)
-
-  @@unique([fromSegmentId, toSegmentId])
-  @@index([fromSegmentId], name: "idx_route_edges_from")
-  @@map("route_edges")
 }
