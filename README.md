@@ -446,4 +446,4 @@ For issues, questions, or feature requests:
 
 ---
 
-**Built with ❤️ for smarter cities by @shivaleeshika and @KrishnaSingh1881**
+**Built with ❤️ for smarter cities by [@shivaleeshika](https://github.com/shivaleeshika) and [@KrishnaSingh1881](https://github.com/KrishnaSingh1881)**
