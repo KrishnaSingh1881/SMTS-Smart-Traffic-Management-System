@@ -41,3 +41,6 @@ prisma/migrations/
 
 # sensitive credentials
 CREDENTIALS.md
+
+/.kiro
+
