@@ -12,6 +12,17 @@ A comprehensive, AI-powered web platform for real-time urban traffic monitoring,
 
 STMS is a production-ready traffic management platform that combines real-time sensor data, AI-driven optimization, and an intuitive dashboard to help traffic controllers and drivers navigate urban congestion efficiently.
 
+## 📖 Detailed Documentation
+
+For a deep dive into the system's inner workings, please refer to the **[Documentation Folder](./documentation/README.md)**:
+
+*   **[System Overview](./documentation/SYSTEM_OVERVIEW.md)**: Mission and core capabilities.
+*   **[Technical Architecture](./documentation/ARCHITECTURE.md)**: Tech stack and data flows.
+*   **[Database Schema](./documentation/DATABASE_SCHEMA.md)**: Data models and relationships.
+*   **[Simulation Engine](./documentation/SIMULATION_ENGINE.md)**: Traffic logic and city generation.
+*   **[AI & Optimization](./documentation/AI_AND_OPTIMIZATION.md)**: Ollama integration and smart signals.
+*   **[Development Guide](./documentation/DEVELOPMENT_GUIDE.md)**: Setup and administrative tools.
+
 ### Key Features
 
 - **Real-Time Traffic Monitoring** — Live vehicle counts, speeds, and congestion levels across all road segments
